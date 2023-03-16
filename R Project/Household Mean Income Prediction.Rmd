@@ -1,0 +1,373 @@
+---
+title: "Final Project 540-Knit"
+author: 'Team 6, '
+date: "12/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("C:/Users/brand/Documents/UW-MSBA_Homework/RegressionClass"))
+```
+
+Install the Necessary Packages
+
+XLConnect
+
+tidyverse
+
+```#{r eval=FALSE, include=FALSE}
+#install.packages("XLConnect") #installs package to read Excel spreadsheets
+#install.packages("tidyverse") #installs very powerful visualization package
+#install.packages("vtable")
+```
+
+Library the Necessary Packages
+
+readxl
+
+tidyverse
+
+```{r echo=FALSE, include=FALSE}
+library(readxl) 
+library(tidyverse)
+library(vtable)
+library(mi)
+library(dplyr)
+library(car)
+```
+
+
+Read Census Data
+
+```{r echo=FALSE, include=FALSE}
+Census_Base <- read_excel("CY 2020 Census Income and Population Data.xlsx",
+                       sheet = "CY 2020 Census Income and Popul") #puts data in Global Environment#
+```
+
+See data types
+
+```{r Data Types}
+str(Census_Base)
+```
+
+View Census data
+
+```{r echo=FALSE, include=FALSE}
+View(Census_Base)  
+```
+
+Basic Summary. Don't use this one. It's just to show the basic table. 
+
+```{r echo=FALSE, include=FALSE}
+st(Census_Base)
+```
+
+Summary with Median. USE THIS ONE.
+
+```{r Sumbtable}
+sumtable(Census_Base, 
+         summ= c('N(x)',
+                'countNA(x)',
+                'notNA(x)',
+                'min(x)',
+                'pctile(x)[25]',
+                'median(x)',
+                'mean(x)',
+                'pctile(x)[75]',
+                'max(x)'))
+```
+
+
+
+
+```{r data renaming}
+HMI <-as.numeric((Census_Base$`Household Mean Income (dollars)`))
+REGION <-(Census_Base$Region)
+POP <-as.numeric((Census_Base$`Total population`))
+MALE<-as.numeric((Census_Base$`Male Total`))
+FEMALE<-as.numeric((Census_Base$`Female Total`))
+EDU <-as.numeric((Census_Base$`Bacherlors Degree or higher`))
+TOT_HOUSE <-as.numeric((Census_Base$`Total Households`))
+AVG_HOUSE <-as.numeric((Census_Base$`Average Household Size`))
+MARRIED <-as.numeric((Census_Base$`Total Population that has been married or currently married`))
+EMP_16 <-as.numeric((Census_Base$`Civilian employed population 16 years and over`))
+SELF_16 <-as.numeric((Census_Base$`Self-employed in own incorporated business workers - Civilian employed population 16 years and over`))
+PRV_16 <-as.numeric((Census_Base$`Private not-for-profit wage and salary workers - Civilian employed population 16 years and over`))
+GOV_16 <-as.numeric((Census_Base$`Local, state, and federal government workers - Civilian employed population 16 years and over`))
+SELF2_16 <-as.numeric((Census_Base$`Self-employed in own not incorporated business workers and unpaid family workers - Civilian employed population 16 years and over`))
+```
+
+Creating Scatterplots
+
+```{r scatterplots}
+ggplot(data=Census_Base, aes(x=POP, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=MALE, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=FEMALE, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=EDU, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=TOT_HOUSE, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=AVG_HOUSE, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=MARRIED, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=EMP_16, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=SELF_16, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=PRV_16, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=GOV_16, y=HMI)) + geom_point(size=2)
+ggplot(data=Census_Base, aes(x=SELF2_16, y=HMI)) + geom_point(size=2)
+```
+
+To create dummy variables k-1 k=4 so use 3 dummy variables.  South has the most, so we use it as the baseline. 
+```{r  dummy variable creation}
+Northeast <- ifelse(Census_Base$Region == 'Northeast', 1, 0)
+Midwest <- ifelse(Census_Base$Region == 'Midwest', 1, 0)
+West <- ifelse(Census_Base$Region == 'West', 1, 0)
+```
+
+
+
+```{r Census Table Combined}
+Census <- data.frame(HMI, POP, MALE, FEMALE, EDU, TOT_HOUSE, AVG_HOUSE, MARRIED, EMP_16, SELF_16, PRV_16, GOV_16, SELF2_16, Northeast, Midwest,West)
+
+View(Census)
+```
+
+
+First Histograms
+
+```{r histograms}
+hist(HMI)
+hist(POP)
+hist(MALE)
+hist(FEMALE)
+hist(EDU)
+hist(TOT_HOUSE)
+hist(AVG_HOUSE)
+hist(MARRIED)
+hist(EMP_16)
+hist(SELF_16)
+hist(PRV_16)
+hist(GOV_16)
+hist(SELF2_16)
+hist(Midwest)
+hist(Northeast)
+hist(West)
+```
+
+Log the data. 
+
+```{r logs}
+Census$POP <- log(Census$POP)
+Census$MALE <- log(Census$MALE)
+Census$FEMALE <- log(Census$FEMALE)
+Census$EDU <- log(Census$EDU)
+Census$TOT_HOUSE <- log(Census$TOT_HOUSE)
+Census$AVG_HOUSE <- log(Census$AVG_HOUSE)
+Census$MARRIED <- log(Census$MARRIED)
+Census$EMP_16 <- log(Census$EMP_16)
+Census$PRV_16 <- log(Census$PRV_16)
+Census$GOV_16 <- log(Census$GOV_16)
+Census$SELF2_16 <- log(Census$SELF2_16)
+```
+
+Histogram the log
+
+```{r histograms log}
+hist(POP)
+hist(MALE)
+hist(FEMALE)
+hist(EDU)
+hist(TOT_HOUSE)
+hist(AVG_HOUSE)
+hist(MARRIED)
+hist(EMP_16)
+hist(SELF_16)
+hist(PRV_16)
+hist(GOV_16)
+hist(SELF2_16)
+```
+
+Geo
+
+```{r }
+ggplot(data=Census, aes(x=POP, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=MALE, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=FEMALE, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=EDU, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=TOT_HOUSE, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=AVG_HOUSE, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=MARRIED, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=EMP_16, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=SELF_16, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=PRV_16, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=GOV_16, y=HMI)) + geom_point(size=2)+geom_smooth()
+ggplot(data=Census, aes(x=SELF2_16, y=HMI)) + geom_point(size=2)+geom_smooth()
+```
+
+Remove NANs and Infs/ - Infs.
+
+```{r removal of NAN INF and -INFs}
+Census[is.na(Census) | Census == "-Inf"] = NA
+```
+
+```{r Regression full table}
+FullCensusFit<-lm(HMI~POP+ MALE+ FEMALE+ EDU+ TOT_HOUSE+ AVG_HOUSE+ MARRIED+ EMP_16+ SELF_16+ PRV_16+ GOV_16+ SELF2_16 + Midwest + Northeast + West, data=Census)
+summary(FullCensusFit)
+```
+Create first subset
+
+```{r select subset1}
+Census1 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, Northeast)
+Census2 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16)
+Census3 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,GOV_16)
+Census4 <- Census %>% select(HMI,AVG_HOUSE,EDU,SELF_16,GOV_16)
+```
+
+Fit first subset
+```{r Regression Subset1}
+Census1Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16, data=Census1)
+Census2Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16, data=Census2)
+Census3Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ GOV_16, data=Census3)
+Census4Fit<-lm(HMI~ EDU+ AVG_HOUSE+ SELF_16+ GOV_16, data=Census4)
+summary(Census1Fit)
+summary(Census2Fit)
+summary(Census3Fit)
+summary(Census4Fit)
+```
+
+Create second subsets
+
+```{r select subset2}
+Census5 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, MALE)
+Census6 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, FEMALE)
+Census7 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, POP)
+Census8 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, TOT_HOUSE)
+Census9 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, MARRIED)
+Census10 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, PRV_16)
+Census11 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, SELF2_16)
+Census12 <- Census %>% select(HMI,AVG_HOUSE,Northeast,EDU,SELF_16,GOV_16)
+Census13 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,Northeast,GOV_16)
+Census14 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,Northeast)
+Census15 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,Northeast,SELF_16,GOV_16)
+```
+
+```{r Regression Subset2}
+Census5Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 + MALE, data=Census5)
+Census6Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 +FEMALE, data=Census6)
+Census7Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 + POP, data=Census7)
+Census8Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 + TOT_HOUSE, data=Census8)
+Census9Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 + MARRIED, data=Census9)
+Census10Fit<-lm(HMI~ EDU+ AVG_HOUSE+ Northeast+ SELF_16+ GOV_16 + PRV_16, data=Census10)
+Census11Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ Northeast + GOV_16 + SELF2_16, data=Census11)
+Census12Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ Northeast + PRV_16, data=Census12)
+Census13Fit<-lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 + Northeast, data=Census13)
+Census14Fit<-lm(HMI~ AVG_HOUSE+ EMP_16+ Northeast + SELF_16+ GOV_16 + SELF2_16, data=Census14)
+Census15Fit<-lm(HMI~ EDU+ Northeast+ EMP_16+ SELF_16+ GOV_16 + SELF2_16, data=Census15)
+
+summary(Census5Fit)
+summary(Census6Fit)
+summary(Census7Fit)
+summary(Census8Fit)
+summary(Census9Fit)
+summary(Census10Fit)
+summary(Census11Fit)
+summary(Census12Fit)
+summary(Census13Fit)
+summary(Census14Fit)
+summary(Census15Fit)
+```
+
+
+```{r select subset3}
+Census16 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16,GOV_16, FEMALE, Northeast)
+Census17 <- Census %>% select(HMI,EMP_16,EDU,SELF_16,GOV_16, FEMALE)
+Census18 <- Census %>% select(HMI,AVG_HOUSE,EDU,SELF_16,GOV_16, FEMALE)
+Census19 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,SELF_16,GOV_16, FEMALE)
+Census20 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,GOV_16, FEMALE)
+Census21 <- Census %>% select(HMI,AVG_HOUSE,EMP_16,EDU,SELF_16, FEMALE)
+```
+
+```{r Regression Subset3}
+Census16Fit<-lm(HMI~ AVG_HOUSE+EMP_16+EDU+SELF_16+GOV_16+ FEMALE+ Northeast, data=Census16)
+Census17Fit<-lm(HMI~ EMP_16+EDU+SELF_16+GOV_16+ FEMALE, data=Census17)
+Census18Fit<-lm(HMI~ AVG_HOUSE+EDU+SELF_16+GOV_16+ FEMALE, data=Census18)
+Census19Fit<-lm(HMI~ AVG_HOUSE+EMP_16+SELF_16+GOV_16+ FEMALE, data=Census19)
+Census20Fit<-lm(HMI~ AVG_HOUSE+EMP_16+EDU+GOV_16+ FEMALE, data=Census20)
+Census21Fit<-lm(HMI~ AVG_HOUSE+EMP_16+EDU+SELF_16+ FEMALE, data=Census21)
+
+summary(Census16Fit)
+summary(Census17Fit)
+summary(Census18Fit)
+summary(Census19Fit)
+summary(Census20Fit)
+summary(Census21Fit)
+```
+
+Creating Residuals for the top 2 fits. 
+```{r Residuals for 6}
+
+plot(Census6Fit)
+
+HMI.stdres6 <-residuals(Census6Fit)
+
+plot(HMI.stdres6)
+
+
+plot(Census6$EDU[1:3142],HMI.stdres6, ylab = "Residuals",xlab="Education", main= "Residuals by Education")
+plot(Census6$AVG_HOUSE[1:3142],HMI.stdres6, ylab = "Residuals",xlab="AVG_HOUSE", main= "Residuals by AVG_HOUSE")
+plot(Census6$EMP_16[1:3142],HMI.stdres6, ylab = "Residuals",xlab="EMP_16", main= "Residuals by EMP_16")
+plot(Census6$SELF_16[1:3142],HMI.stdres6, ylab = "Residuals",xlab="SELF_16", main= "Residuals by SELF_16")
+plot(Census6$GOV_16[1:3142],HMI.stdres6, ylab = "Residuals",xlab="GOV_16", main= "Residuals by GOV_16")
+plot(Census6$FEMALE[1:3142],HMI.stdres6, ylab = "Residuals",xlab="FEMALE", main= "Residuals by FEMALE")
+
+
+#ggplot(data=Census6, aes(x=EDU[1:3142], y=HMI.stdres6))+geom_point()
+#ggplot(data=Census, aes(x=AVG_HOUSE, y=HMI.stdres6))+geom_point()
+#ggplot(data=Census, aes(x=EMP_16, y=HMI.stdres6))+geom_point()
+#ggplot(data=Census, aes(x=SELF_16, y=HMI.stdres6))+geom_point()
+#ggplot(data=Census, aes(x=GOV_16, y=HMI.stdres6))+geom_point()
+#ggplot(data=Census, aes(x=FEMALE, y=HMI.stdres6))+geom_point()
+
+```
+Predictions
+
+```{r predictions}
+HMI.predict=predict(lm(HMI~ EDU+ AVG_HOUSE+ EMP_16+ SELF_16+ GOV_16 +FEMALE, data=Census6))
+
+```
+
+Predictions vs Actuals
+```{r predictedvsActual}
+ggplot(Census6Fit, aes(x = EDU, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 1)  # Points of predicted values
+
+ggplot(Census6Fit, aes(x = AVG_HOUSE, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 1) # Points of predicted values
+
+ggplot(Census6Fit, aes(x = EMP_16, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 1) # Points of predicted values
+
+ggplot(Census6Fit, aes(x = SELF_16, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 2) # Points of predicted values
+
+ggplot(Census6Fit, aes(x = GOV_16, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 3) # Points of predicted values
+
+ggplot(Census6Fit, aes(x = FEMALE, y = HMI)) +
+  geom_point()+ # Points of actual values
+  geom_point(aes(y = HMI.predict), shape = 3)
+
+```
+
+Check for Collinearity
+```{r}
+vif(Census6Fit)
+```
+
+```{r Anova One-Way}
+anova(Census6Fit)
+```
+
