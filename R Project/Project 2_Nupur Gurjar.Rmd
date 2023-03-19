@@ -1,0 +1,153 @@
+---
+title: "Project 2"
+author: "Nupur Gurjar"
+date: "2023-03-17"
+output: word_document
+---
+
+
+```{r}
+library(mlbench)
+```
+
+
+#Data
+```{r}
+data(BreastCancer)
+ls(BreastCancer)
+```
+
+
+#libraries
+```{r}
+library(e1071)
+library(klaR)
+library(nnet)
+library(MASS)
+library(rpart)
+library(randomForest)
+library(caret)
+```
+
+
+```{r}
+summary(BreastCancer)
+
+BreastCancer <- na.omit(BreastCancer) 
+
+BreastCancer$Id <- NULL 
+head(BreastCancer)
+str(BreastCancer)
+df2 <- data.frame(sapply(BreastCancer[1:9], function(x) as.numeric(as.character(x))))
+z <- scale(df2[,1:9],center=TRUE,scale=TRUE)
+head(z)
+
+set.seed(2)
+index <- createDataPartition(BreastCancer$Class, p =0.7, list = FALSE)
+bc_train <- BreastCancer[index,]
+bc_valid <- BreastCancer[-index,]
+```
+
+
+#Naive Bayes
+```{r}
+mynb <- NaiveBayes(Class ~ ., bc_train, usekernel = TRUE)
+mynb.pred <- predict(mynb,bc_valid)
+#head(mynb.pred$class)
+table(mynb.pred$class,bc_valid$Class)
+str(mynb.pred)
+```
+
+
+#Decision trees
+```{r}
+mytree <- rpart(Class ~ ., bc_train)
+plot(mytree); text(mytree) 
+summary(mytree)
+mytree.pred <- predict(mytree,bc_valid,type="class")
+table(mytree.pred,bc_valid$Class)
+```
+
+
+#Random Forests
+```{r}
+myrf <- randomForest(Class ~ ., bc_train)
+myrf.pred <- predict(myrf, bc_valid)
+head(myrf.pred)
+table(myrf.pred, bc_valid$Class)
+
+```
+
+
+
+
+
+#SVM
+```{r}
+mysvm <- svm(Class ~ ., bc_train)
+mysvm.pred <- predict(mysvm, bc_valid)
+table(mysvm.pred,bc_valid$Class)
+```
+
+
+# Leave-1-Out Cross Validation (LOOCV)
+```{r}
+ans <- numeric(length(BreastCancer[,1]))
+for (i in 1:length(BreastCancer[,1])) {
+  mytree <- rpart(Class ~ ., BreastCancer[-i,])
+  mytree.pred <- predict(mytree,BreastCancer[i,],type="class")
+  ans[i] <- mytree.pred
+}
+ans <- factor(ans,labels=levels(BreastCancer$Class))
+table(ans,BreastCancer$Class)
+```
+#Regularised Discriminant Analysis
+```{r}
+myrda <- rda(Class ~ ., bc_train)
+myrda.pred <- predict(myrda, bc_valid)
+table(myrda.pred$class,bc_valid$Class)
+```
+
+
+```{r}
+combine.classes<-data.frame(myrf.pred, myrda.pred$class,#myqda.pred, 
+                            mytree.pred,mysvm.pred, mynb.pred$class)
+#,mynnet.pred
+head(combine.classes)
+head(myrf.pred)
+head(myrda.pred)
+combine.classes$myrf.pred<-ifelse(combine.classes$myrf.pred=="benign", 0, 1)
+combine.classes[,2]<-ifelse(combine.classes[,2]=="benign", 0, 1)
+combine.classes[,3]<-ifelse(combine.classes[,3]=="benign", 0, 1)
+combine.classes[,4]<-ifelse(combine.classes[,4]=="benign", 0, 1)
+combine.classes[,5]<-ifelse(combine.classes[,5]=="benign", 0, 1)
+#combine.classes[,6]<-ifelse(combine.classes[,6]=="benign", 0, 1)
+
+str(combine.classes)
+combine.cl<-combine.classes[, -c(6,7)]
+majority.vote=rowSums(combine.classes[,-c(6,7)])
+head(majority.vote)
+combine.classes[,6]<-rowSums(combine.classes[,-c(6,7)])
+combine.classes[,7]<-ifelse(combine.classes[,6]>=4, "malignant", "benign")
+Confusion_B <-table(combine.classes[,7], bc_valid$Class)
+accuracy <- sum(diag(Confusion_B))/sum(Confusion_B)
+accuracy
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
