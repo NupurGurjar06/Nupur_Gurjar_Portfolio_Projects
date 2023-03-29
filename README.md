@@ -1,5 +1,4 @@
 # Nupur_Gurjar_Portfolio_Projects
-@@ -1,7 +1,7 @@
 # Hello Everyone! <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
 ## I am a Data Enthusiast!
 - 🔭 I’m currently working as Data Analyst
